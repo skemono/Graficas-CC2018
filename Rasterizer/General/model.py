@@ -5,12 +5,18 @@ class Model(object):
 
         self.vertices = [ ]
         self.faces = [ ]
+        self.normals = [ ]
+        self.textureVertices = [ ]
+        self.faceTexCoords = [ ]
+        self.faceNormals = [ ]
 
         self.translation = [0,0,0]
         self.rotation = [0,0,0]
         self.scale = [10,10,10]
 
         self.vertexShader = None
+        self.fragmentShader = None
+        self.texture = None
 
 
     def GetModelMatrix(self):

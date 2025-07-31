@@ -15,14 +15,14 @@ def GenerateBMP(filename: str, width: int, height: int, byteDepth: int, colorBuf
         return struct.pack("<L", d)
 
     with open(filename, "wb") as file:
-        # Header
+        # Encabezado
         file.write(char("B"))
         file.write(char("M"))
         file.write(dword(14 + 40 + (width * height * byteDepth)))
         file.write(dword(0))
         file.write(dword(14 + 40))
         
-        # Info Header
+        # Encabezado de información
         file.write(dword(40))
         file.write(dword(width))
         file.write(dword(height))
@@ -35,7 +35,7 @@ def GenerateBMP(filename: str, width: int, height: int, byteDepth: int, colorBuf
         file.write(dword(0))
         file.write(dword(0))
         
-        # Color table
+        # Tabla de colores
         for y in range(height):
             for x in range(width):
                 color = colorBuffer[x][y]
