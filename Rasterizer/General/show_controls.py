@@ -30,6 +30,12 @@ Shaders de Fragmentos:
 - L: Activar/Desactivar Iluminación
 - T: Activar/Desactivar Texturas
 
+Shaders Especiales:
+- B: Activar Rusty Decay shader (Metal oxidado y corroído)
+- N: Disponible para nuevos shaders
+- M: Desactivar shaders especiales
+- G: Activar/Desactivar shader Hologram (Futurista)
+
 Movimiento de Cámara:
 - Flecha Derecha: Mover a la derecha
 - Flecha Izquierda: Mover a la izquierda

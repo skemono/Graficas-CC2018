@@ -68,9 +68,9 @@ clock = pygame.time.Clock()
 rend = Renderer(screen)
 rend.glSetProjection(fov=60, aspect_ratio=width/height, near=0.1, far=1000)
 rend.glSetViewport(0, 0, width, height)
-rend.dirLight = (-5, 0, 0.3)  
+rend.dirLight = (-5, 0, 0.3)
 
-# triangle3 = [[510,70], [550, 160], [570,80] ]
+# Cargar modelo principal
 
 
 triangleModel = loadObj("sword.obj")
@@ -103,6 +103,9 @@ isRunning = True
 while isRunning:
 
 	deltaTime = clock.tick(60) / 1000.0
+	
+	# Actualizar tiempo para shaders animados
+	rend.time += deltaTime
 	
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
@@ -157,6 +160,32 @@ while isRunning:
 				if triangleModel.texture:
 					triangleModel.fragmentShader = texturedShader if triangleModel.fragmentShader != texturedShader else gouraudShader
 					print(f"Texture {'enabled' if triangleModel.fragmentShader == texturedShader else 'disabled'}")
+			elif event.key == pygame.K_b:
+				triangleModel.vertexShader = rusty_vertex_shader
+				triangleModel.fragmentShader = rusty_shader
+				print("Shader de descomposición oxidada activado")
+			elif event.key == pygame.K_n:
+				# Tecla N disponible para nuevos shaders
+				print("Tecla N presionada - ningún shader asignado")
+			elif event.key == pygame.K_m:
+				triangleModel.vertexShader = vertexShader
+				if triangleModel.texture:
+					triangleModel.fragmentShader = texturedShader
+				else:
+					triangleModel.fragmentShader = gouraudShader
+				print("Shaders especiales desactivados")
+			elif event.key == pygame.K_g:
+				if triangleModel.vertexShader != hologram_vertex_shader:
+					triangleModel.vertexShader = hologram_vertex_shader
+					triangleModel.fragmentShader = hologramShader
+					print("Shader holográfico activado")
+				else:
+					triangleModel.vertexShader = vertexShader
+					if triangleModel.texture:
+						triangleModel.fragmentShader = texturedShader
+					else:
+						triangleModel.fragmentShader = gouraudShader
+					print("Shader holográfico desactivado")
 	
 
 	keys = pygame.key.get_pressed()
@@ -181,22 +210,13 @@ while isRunning:
 		triangleModel.rotation[1] -= 20 * deltaTime
 
 	if keys[pygame.K_w]:
-		triangleModel.scale =  [(i + deltaTime) for i in triangleModel.scale]
+		triangleModel.scale = [(i + deltaTime) for i in triangleModel.scale]
 	if keys[pygame.K_s]:
-		triangleModel.scale = [(i - deltaTime) for i in triangleModel.scale ]
-
-
-
-
-
-
-
-
-
+		triangleModel.scale = [(i - deltaTime) for i in triangleModel.scale]
 
 	rend.glClear()
 
-	# Escribir lo que se va a dibujar aqui
+	# Renderizado principal del modelo
 	rend.glSetCamera(rend.cameraPosition, rend.cameraRotation)
 	rend.glRender()
 	

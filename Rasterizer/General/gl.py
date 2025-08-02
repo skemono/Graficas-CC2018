@@ -37,6 +37,9 @@ class Renderer(object):
 		self.projectionMatrix = None
 		self.viewMatrix = None
 		self.viewportMatrix = None
+		
+		# Time for animated shaders
+		self.time = 0.0
 
 		# Buffer Z
 		self.zBuffer = [[-float('inf') for y in range(self.height)] for x in range(self.width)]
@@ -67,6 +70,10 @@ class Renderer(object):
 							for x in range(self.width)]
 		
 		self.zBuffer = [[-float('inf') for y in range(self.height)] for x in range(self.width)]
+
+	def updateTime(self, deltaTime):
+		"""Update the time for animated shaders"""
+		self.time += deltaTime
 
 
 	def glPoint(self, x, y, color = None, z = 0):
@@ -198,7 +205,8 @@ class Renderer(object):
 						"pixelColor": self.currColor,
 						"dirLight": self.dirLight,
 						"texture": self.activeTexture,
-						"lighting_enabled": self.lighting_enabled
+						"lighting_enabled": self.lighting_enabled,
+						"time": self.time
 					}
 					
 					color = self.activeFragmentShader(**shader_params)
