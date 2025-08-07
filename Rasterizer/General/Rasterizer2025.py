@@ -161,12 +161,25 @@ while isRunning:
 					triangleModel.fragmentShader = texturedShader if triangleModel.fragmentShader != texturedShader else gouraudShader
 					print(f"Texture {'enabled' if triangleModel.fragmentShader == texturedShader else 'disabled'}")
 			elif event.key == pygame.K_b:
-				triangleModel.vertexShader = rusty_vertex_shader
-				triangleModel.fragmentShader = rusty_shader
-				print("Shader de descomposición oxidada activado")
+				if triangleModel.vertexShader != rusty_vertex_shader:
+					triangleModel.vertexShader = rusty_vertex_shader
+					triangleModel.fragmentShader = rusty_shader
+					print("Shader de descomposición oxidada activado")
+				else:
+					triangleModel.vertexShader = vertexShader
+					if triangleModel.texture:
+						triangleModel.fragmentShader = texturedShader
+					else:
+						triangleModel.fragmentShader = gouraudShader
+					print("Shader de descomposición oxidada desactivado")
 			elif event.key == pygame.K_n:
-				# Tecla N disponible para nuevos shaders
-				print("Tecla N presionada - ningún shader asignado")
+				triangleModel.vertexShader = thermal_vertex_shader
+				triangleModel.fragmentShader = thermal_shader
+				print("Shader de visión térmica activado")
+			elif event.key == pygame.K_j:
+				triangleModel.vertexShader = tron_vertex_shader
+				triangleModel.fragmentShader = tron_shader
+				print("Shader Tron/wireframe activado")
 			elif event.key == pygame.K_m:
 				triangleModel.vertexShader = vertexShader
 				if triangleModel.texture:

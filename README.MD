@@ -9,6 +9,8 @@ Este es un proyecto de un rasterizador 3D avanzado implementado en Python utiliz
 - **Efectos especiales**: 
   - Shader de descomposición oxidada con destrucción extrema del modelo
   - Shader holográfico futurista con efectos de falla digital
+  - Shader de visión térmica con paleta de temperatura y ondas de calor
+  - Shader Tron/wireframe con efectos neón digitales y animación
 - **Sistema de cámaras**: Múltiples ángulos de cámara predefinidos
 - **Controles intuitivos**: Navegación y manipulación del modelo en tiempo real
 
@@ -53,10 +55,11 @@ Este es un proyecto de un rasterizador 3D avanzado implementado en Python utiliz
 - **H**: Mostrar esta lista de controles en una ventana.
 
 ### Shaders Especiales
-- **B**: Activar Shader de Descomposición Oxidada - Crea efectos extremos de oxidación, hoyos masivos, erosión catastrófica y destrucción estructural del modelo.
+- **B**: Activar/Desactivar Shader de Descomposición Oxidada - Crea efectos extremos de oxidación, hoyos masivos, erosión catastrófica y destrucción estructural del modelo.
 - **G**: Activar/Desactivar Shader Holográfico - Efectos futuristas con líneas de escaneo, fallas digitales y transparencia holográfica.
+- **N**: Activar Shader de Visión Térmica - Simula visión térmica con paleta de colores de temperatura y ondas de calor.
+- **J**: Activar Shader Tron/Wireframe - Efectos futuristas con wireframe neón, grid digital y corriente eléctrica animada.
 - **M**: Desactivar todos los shaders especiales y volver al renderizado normal.
-- **N**: Disponible para futuros shaders.
 
 ### Movimiento de la Cámara
 - **Flecha Derecha**: Mover la cámara hacia la derecha.
@@ -110,6 +113,21 @@ Rasterizer/
   - Transparencia dinámica
   - Ruido digital y corrupción de color
   - Efectos de parpadeo y pulsación
+
+- **Thermal Vision Shader**: Simula visión térmica con:
+  - Paleta de colores basada en temperatura (azul frío a rojo caliente)
+  - Ondas de calor que distorsionan la geometría
+  - Efectos de pulso térmico animado
+  - Líneas de interferencia de escaneo térmico
+  - Cálculo de temperatura basado en altura y ruido
+
+- **Tron/Wireframe Shader**: Efectos futuristas digitales con:
+  - Wireframe neón brillante en bordes
+  - Grid digital animado en la superficie
+  - Corriente eléctrica animada en las líneas
+  - Ondas digitales y pulsos de escala
+  - Efectos de escaneo vertical dinámico
+  - Base oscura con acentos cian neón
 
 ## Características Técnicas
 

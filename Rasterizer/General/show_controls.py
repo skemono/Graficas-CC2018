@@ -32,7 +32,8 @@ Shaders de Fragmentos:
 
 Shaders Especiales:
 - B: Activar Rusty Decay shader (Metal oxidado y corroído)
-- N: Disponible para nuevos shaders
+- N: Activar Thermal Vision shader (Visión térmica)
+- J: Activar Tron Wireframe shader (Efectos futuristas)
 - M: Desactivar shaders especiales
 - G: Activar/Desactivar shader Hologram (Futurista)
 

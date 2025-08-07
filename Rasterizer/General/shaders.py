@@ -1,4 +1,10 @@
 import numpy as np
+import math
+
+
+def noise(x, y, z, t=0):
+    """Función de ruido simple usando seno"""
+    return (math.sin(x * 12.9898 + y * 78.233 + z * 37.719 + t) * 43758.5453) % 1.0 - 0.5
 
 def texturedShader(**kwargs):
     # Muestrear la textura usando UVs interpoladas
@@ -634,5 +640,389 @@ def rusty_shader(**kwargs):
     g = max(0, min(1, g))
     b = max(0, min(1, b))
     return [r, g, b]
+
+
+# Vertex shader para efectos térmicos
+def thermal_vertex_shader(vertex, time):
+    x, y, z, w = vertex
+    # Aplicar una pequeña deformación por calor
+    heat_noise = noise(x * 2, y * 2, z * 2, time * 0.3) * 0.02
+    y += heat_noise
+    return [x, y, z, w]
+
+
+# Fragment shader para visión térmica
+def thermal_shader(x, y, length, intensity, texture=None):
+    # Calcular temperatura basada en la distancia y posición
+    distance_factor = length / 5.0
+    temp = 1.0 - distance_factor
+    
+    # Simular ruido térmico
+    heat_noise = noise(x * 10, y * 10, 0) * 0.3
+    temp += heat_noise
+    
+    # Mapeo de temperatura a colores (azul frío -> rojo caliente)
+    if temp < 0.2:
+        # Azul muy frío
+        r, g, b = 0.0, 0.0, min(1.0, temp * 5)
+    elif temp < 0.4:
+        # Azul a cian
+        t = (temp - 0.2) / 0.2
+        r, g, b = 0.0, t * 0.5, 1.0
+    elif temp < 0.6:
+        # Cian a verde
+        t = (temp - 0.4) / 0.2
+        r, g, b = 0.0, 0.5 + t * 0.5, 1.0 - t
+    elif temp < 0.8:
+        # Verde a amarillo
+        t = (temp - 0.6) / 0.2
+        r, g, b = t, 1.0, 0.0
+    else:
+        # Amarillo a rojo (muy caliente)
+        t = min(1.0, (temp - 0.8) / 0.2)
+        r, g, b = 1.0, 1.0 - t * 0.5, 0.0
+    
+    # Añadir brillo de calor
+    glow = max(0, temp - 0.7) * 0.3
+    r += glow
+    g += glow * 0.5
+    
+    return [max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, b))]
+
+
+# Vertex shader para efectos Tron/wireframe
+def tron_vertex_shader(vertex, time):
+    x, y, z, w = vertex
+    # Ondulación sutil para efecto futurista
+    wave = math.sin(time * 2 + x * 3 + z * 3) * 0.015
+    pulse = math.sin(time * 4) * 0.01
+    y += wave + pulse
+    return [x, y, z, w]
+
+
+# Fragment shader para efecto Tron/wireframe
+def tron_shader(x, y, length, intensity, texture=None):
+    # Pulsos de energía
+    pulse_speed = 3.0
+    pulse = math.sin(length * 15 + pulse_speed) * 0.5 + 0.5
+    
+    # Color base neon azul cian
+    base_r, base_g, base_b = 0.0, 0.8, 1.0
+    
+    # Efecto de brillo basado en intensidad y pulso
+    glow_factor = intensity * pulse * 2.0
+    
+    # Añadir componente de energía
+    energy = math.sin(x * 20 + y * 20) * 0.2 + 0.8
+    
+    r = base_r + glow_factor * 0.5
+    g = base_g + glow_factor * 0.3
+    b = base_b + glow_factor * 0.2
+    
+    # Efecto de circuito (líneas más brillantes en ciertas áreas)
+    circuit_x = abs(math.sin(x * 30)) > 0.9
+    circuit_y = abs(math.sin(y * 30)) > 0.9
+    if circuit_x or circuit_y:
+        r += 0.3
+        g += 0.5
+        b += 0.2
+    
+    # Multiplicar por energía
+    r *= energy
+    g *= energy
+    b *= energy
+    
+    return [max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, b))]
+
+
+# ===== SHADERS DE VISIÓN TÉRMICA =====
+
+def thermal_vertex_shader(vertex, normal, **kwargs):
+    """Shader de vértice para efecto de visión térmica con ondas de calor"""
+    modelMatrix = kwargs["modelMatrix"]
+    viewMatrix = kwargs["viewMatrix"]
+    projectionMatrix = kwargs["projectionMatrix"]
+    viewportMatrix = kwargs["viewportMatrix"]
+    time = kwargs.get("time", 0)
+    
+    x, y, z = vertex[:3]
+    
+    # Ondas de calor - distorsión leve basada en temperatura
+    heat_intensity = 0.3
+    wave_x = math.sin(y * 8 + time * 4) * heat_intensity * 0.02
+    wave_y = math.cos(x * 6 + time * 3) * heat_intensity * 0.015
+    wave_z = math.sin(z * 5 + time * 5) * heat_intensity * 0.01
+    
+    # Aplicar distorsión térmica
+    vertex_array = np.array([x + wave_x, y + wave_y, z + wave_z])
+    
+    vt = [vertex_array[0], vertex_array[1], vertex_array[2], 1]
+    nt = [normal[0], normal[1], normal[2], 0]
+    
+    vt = viewportMatrix @ projectionMatrix @ viewMatrix @ modelMatrix @ vt
+    vt = vt.tolist()[0]
+    
+    # Transformar normal
+    nt = np.linalg.inv(modelMatrix.T) @ nt
+    nt = nt.tolist()[0]
+    
+    vt = [vt[0] / vt[3], vt[1] / vt[3], vt[2] / vt[3]]
+    nt = [nt[0], nt[1], nt[2]]
+    
+    nt_norm = np.linalg.norm(nt)
+    if nt_norm > 0:
+        nt = (np.array(nt) / nt_norm).tolist()
+    
+    return vt, nt
+
+def thermal_shader(**kwargs):
+    """Shader de fragmento para visión térmica - colores basados en temperatura"""
+    # Obtener coordenadas del fragmento
+    u, v, w = kwargs["baryCoords"]
+    A, B, C = kwargs["vertices"]
+    
+    # Interpolar posición
+    x = A[0] * u + B[0] * v + C[0] * w
+    y = A[1] * u + B[1] * v + C[1] * w
+    z = A[2] * u + B[2] * v + C[2] * w
+    time = kwargs.get("time", 0)
+    
+    # Calcular temperatura usando formas REALMENTE orgánicas sin líneas
+    time_organic = time * 0.5
+    
+    # Crear múltiples "burbujas" o "manchas" de temperatura usando distancias
+    # Burbuja 1 - centro móvil
+    center1_x = math.sin(time_organic * 0.7) * 2
+    center1_z = math.cos(time_organic * 0.9) * 1.5
+    dist1 = math.sqrt((x - center1_x)**2 + (z - center1_z)**2)
+    bubble1 = math.exp(-dist1 * 1.5)  # Forma gaussiana suave
+    
+    # Burbuja 2 - otro centro móvil
+    center2_x = math.cos(time_organic * 0.6) * 1.8
+    center2_z = math.sin(time_organic * 1.1) * 2.2
+    dist2 = math.sqrt((x - center2_x)**2 + (z - center2_z)**2)
+    bubble2 = math.exp(-dist2 * 1.2) * 0.8
+    
+    # Burbuja 3 - forma más irregular
+    center3_x = math.sin(time_organic * 0.4) * 1.2 + math.cos(time_organic * 0.8) * 0.5
+    center3_z = math.cos(time_organic * 0.5) * 1.6 + math.sin(time_organic * 1.3) * 0.7
+    dist3 = math.sqrt((x - center3_x)**2 + (z - center3_z)**2)
+    bubble3 = math.exp(-dist3 * 0.9) * 0.6
+    
+    # Combinar burbujas para crear formas orgánicas
+    organic_temp = bubble1 + bubble2 + bubble3
+    
+    # Añadir ruido muy suave para irregularidades
+    smooth_noise = noise(x * 0.8, y * 0.8, z * 0.8, time_organic) * 0.3
+    
+    # Temperatura base por altura (muy sutil)
+    height_factor = (y + 1) * 0.2
+    
+    # Combinar todo
+    temperature = organic_temp + smooth_noise + height_factor
+    
+    # Normalizar suavemente entre 0 y 1
+    temperature = max(0, min(1, temperature * 0.7 + 0.3))
+    
+    # Paleta de colores térmica con transiciones más marcadas
+    if temperature < 0.15:
+        # Negro/púrpura oscuro (muy frío)
+        r = temperature * 0.3
+        g = 0.0
+        b = temperature * 1.5
+    elif temperature < 0.3:
+        # Azul a cian
+        t = (temperature - 0.15) / 0.15
+        r = 0.0
+        g = t * 0.7
+        b = 0.3 + t * 0.7
+    elif temperature < 0.45:
+        # Cian a verde saturado
+        t = (temperature - 0.3) / 0.15
+        r = 0.0
+        g = 0.7 + t * 0.3
+        b = 1.0 - t * 1.0
+    elif temperature < 0.6:
+        # Verde a amarillo saturado
+        t = (temperature - 0.45) / 0.15
+        r = t * 1.0
+        g = 1.0
+        b = 0.0
+    elif temperature < 0.75:
+        # Amarillo a naranja
+        t = (temperature - 0.6) / 0.15
+        r = 1.0
+        g = 1.0 - t * 0.4
+        b = 0.0
+    else:
+        # Naranja a rojo brillante
+        t = (temperature - 0.75) / 0.25
+        r = 1.0
+        g = 0.6 - t * 0.6
+        b = t * 0.2
+    
+    # Efectos térmicos completamente orgánicos SIN LÍNEAS
+    time_flow = time * 1.5
+    
+    # Crear "manchas" de calor que crecen y se encogen
+    # Mancha caliente 1
+    hot_center1_x = math.sin(time_flow * 0.3) * 1.5
+    hot_center1_z = math.cos(time_flow * 0.4) * 1.2
+    hot_dist1 = math.sqrt((x - hot_center1_x)**2 + (z - hot_center1_z)**2)
+    hot_spot1 = math.exp(-hot_dist1 * 2) * (0.8 + math.sin(time_flow * 2) * 0.3)
+    
+    # Mancha caliente 2
+    hot_center2_x = math.cos(time_flow * 0.5) * 1.8
+    hot_center2_z = math.sin(time_flow * 0.6) * 1.6
+    hot_dist2 = math.sqrt((x - hot_center2_x)**2 + (z - hot_center2_z)**2)
+    hot_spot2 = math.exp(-hot_dist2 * 1.5) * (0.7 + math.cos(time_flow * 1.8) * 0.4)
+    
+    # Mancha fría móvil
+    cold_center_x = math.sin(time_flow * 0.2) * 2.2
+    cold_center_z = math.cos(time_flow * 0.25) * 1.9
+    cold_dist = math.sqrt((x - cold_center_x)**2 + (z - cold_center_z)**2)
+    cold_spot = math.exp(-cold_dist * 1.3) * (0.6 + math.sin(time_flow * 1.5) * 0.3)
+    
+    # Aplicar efectos de manchas de temperatura
+    if hot_spot1 > 0.2:
+        # Zona caliente 1 - rojos y naranjas
+        heat_intensity = hot_spot1 - 0.2
+        r += heat_intensity * 0.6
+        g += heat_intensity * 0.3
+        b += heat_intensity * 0.1
+    
+    if hot_spot2 > 0.15:
+        # Zona caliente 2 - amarillos y naranjas
+        heat_intensity = hot_spot2 - 0.15
+        r += heat_intensity * 0.5
+        g += heat_intensity * 0.5
+        b += heat_intensity * 0.1
+    
+    if cold_spot > 0.2:
+        # Zona fría - azules y cianes
+        cold_intensity = cold_spot - 0.2
+        r += cold_intensity * 0.1
+        g += cold_intensity * 0.4
+        b += cold_intensity * 0.7
+    
+    # Pulso orgánico general muy suave
+    global_pulse = (math.sin(time_flow * 0.8) + 1) * 0.1
+    r += global_pulse * temperature
+    g += global_pulse * 0.8
+    b += global_pulse * 0.6
+    
+    # Variación suave de temperatura por zonas circulares
+    center_dist = math.sqrt(x*x + z*z)
+    zone_effect = math.exp(-center_dist * 0.5) * math.sin(time_flow * 0.7) * 0.15
+    
+    r += zone_effect
+    g += zone_effect * 0.8
+    b += zone_effect * 0.9
+    
+    return [max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, b))]
+
+
+# ===== SHADERS TRON/WIREFRAME =====
+
+def tron_vertex_shader(vertex, normal, **kwargs):
+    """Shader de vértice para efecto Tron con animación wireframe"""
+    modelMatrix = kwargs["modelMatrix"]
+    viewMatrix = kwargs["viewMatrix"]
+    projectionMatrix = kwargs["projectionMatrix"]
+    viewportMatrix = kwargs["viewportMatrix"]
+    time = kwargs.get("time", 0)
+    
+    x, y, z = vertex[:3]
+    
+    # Efecto de ondas digitales
+    digital_wave = math.sin(time * 3) * 0.01
+    grid_pulse = math.sin(x * 20 + time * 4) * math.cos(z * 20 + time * 4) * 0.005
+    
+    # Expansión/contracción digital
+    scale_pulse = 1.0 + math.sin(time * 2) * 0.02
+    
+    # Aplicar transformación Tron
+    vertex_array = np.array([x * scale_pulse + grid_pulse, 
+                            y + digital_wave, 
+                            z * scale_pulse + grid_pulse])
+    
+    vt = [vertex_array[0], vertex_array[1], vertex_array[2], 1]
+    nt = [normal[0], normal[1], normal[2], 0]
+    
+    vt = viewportMatrix @ projectionMatrix @ viewMatrix @ modelMatrix @ vt
+    vt = vt.tolist()[0]
+    
+    # Transformar normal
+    nt = np.linalg.inv(modelMatrix.T) @ nt
+    nt = nt.tolist()[0]
+    
+    vt = [vt[0] / vt[3], vt[1] / vt[3], vt[2] / vt[3]]
+    nt = [nt[0], nt[1], nt[2]]
+    
+    nt_norm = np.linalg.norm(nt)
+    if nt_norm > 0:
+        nt = (np.array(nt) / nt_norm).tolist()
+    
+    return vt, nt
+
+def tron_shader(**kwargs):
+    """Shader de fragmento para efecto Tron - wireframe animado con neón"""
+    # Obtener coordenadas del fragmento
+    u, v, w = kwargs["baryCoords"]
+    A, B, C = kwargs["vertices"]
+    
+    # Interpolar posición
+    x = A[0] * u + B[0] * v + C[0] * w
+    y = A[1] * u + B[1] * v + C[1] * w
+    z = A[2] * u + B[2] * v + C[2] * w
+    time = kwargs.get("time", 0)
+    
+    # Base oscura
+    r, g, b = 0.05, 0.05, 0.1
+    
+    # Detectar bordes (wireframe)
+    edge_threshold = 0.05
+    is_edge = (min(u, v, w) < edge_threshold)
+    
+    if is_edge:
+        # Colores neón cian brillante
+        base_intensity = 0.8 + math.sin(time * 8) * 0.2
+        r = 0.0
+        g = base_intensity
+        b = base_intensity
+        
+        # Efecto de corriente eléctrica en los bordes
+        electric_flow = abs(math.sin((x + z) * 30 - time * 15))
+        if electric_flow > 0.9:
+            r = base_intensity * 0.3
+            g = base_intensity * 1.2
+            b = base_intensity * 1.2
+    
+    # Grid digital en la superficie
+    grid_x = abs(math.sin(x * 15)) > 0.95
+    grid_z = abs(math.sin(z * 15)) > 0.95
+    
+    if grid_x or grid_z:
+        grid_glow = 0.3 + math.sin(time * 6) * 0.1
+        r += grid_glow * 0.2
+        g += grid_glow * 0.8
+        b += grid_glow * 0.6
+    
+    # Pulso de energía general
+    energy_pulse = (math.sin(time * 4) + 1) / 2 * 0.3 + 0.7
+    r *= energy_pulse
+    g *= energy_pulse
+    b *= energy_pulse
+    
+    # Efecto de escaneo vertical
+    scan_pos = (math.sin(time * 2) + 1) / 2
+    scan_distance = abs(y - (scan_pos * 2 - 1))
+    if scan_distance < 0.1:
+        scan_intensity = (0.1 - scan_distance) / 0.1
+        r += scan_intensity * 0.5
+        g += scan_intensity * 1.0
+        b += scan_intensity * 0.8
+    
+    return [max(0, min(1, r)), max(0, min(1, g)), max(0, min(1, b))]
 
 
