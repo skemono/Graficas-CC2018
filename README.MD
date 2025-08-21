@@ -1,146 +1,87 @@
-# Rasterizador 3D en Python
+# Rasterizador 3D en Python (Pygame)
 
-Este es un proyecto de un rasterizador 3D avanzado implementado en Python utilizando Pygame. Permite cargar modelos en formato `.obj`, aplicar transformaciones, cambiar entre diferentes shaders (incluyendo efectos especiales como oxidación y hologramas) y vistas de cámara.
+Rasterizador 3D con soporte para OBJ/MTL, texturas BMP, iluminación direccional y múltiples shaders de fragmento numerados. Incluye fondo BMP opcional y captura de pantalla.
 
 ## Características
 
-- **Renderizado 3D completo**: Pipeline de rasterización con soporte para vértices, normales y texturas
-- **Múltiples shaders**: Flat, Gouraud, Fragment y shaders especiales animados
-- **Efectos especiales**: 
-  - Shader de descomposición oxidada con destrucción extrema del modelo
-  - Shader holográfico futurista con efectos de falla digital
-  - Shader de visión térmica con paleta de temperatura y ondas de calor
-  - Shader Tron/wireframe con efectos neón digitales y animación
-- **Sistema de cámaras**: Múltiples ángulos de cámara predefinidos
-- **Controles intuitivos**: Navegación y manipulación del modelo en tiempo real
+- Pipeline de rasterización por software (vértices, normales, UVs, Z-buffer)
+- Texturas desde OBJ/MTL (map_Kd) con prioridad sobre texturas de respaldo
+- Shaders de fragmento básicos: Flat, Gouraud, Textured
+- Shaders numerados (asignables por modelo):
+  1. toonShader (cómic/cel shading con contorno)
+  2. rimIridescentShader (rim + iridiscencia animada)
+  3. lavaNoiseShader (lava procedural con fBm)
+  4. wireframeOverlayShader (wireframe sobre iluminación)
+- Luz ambiente configurable para suavizar sombras
+- Fondo BMP con blit rápido
+- Captura de pantalla (PNG) al disco
 
-## Cómo Usar
+## Requisitos
 
-1.  **Requisitos:** Asegúrate de tener Python 3 y las dependencias instaladas.
-    ```bash
-    pip install pygame numpy
-    ```
-2.  **Ejecutar:** Navega al directorio `Rasterizer/General` y ejecuta el siguiente comando:
-    ```bash
-    python Rasterizer2025.py
-    ```
-3.  **Interactuar:** Una vez que la ventana se abra, puedes usar las siguientes teclas para interactuar con el programa.
+```bash
+pip install pygame numpy
+```
+
+## Ejecución
+
+Desde `Rasterizer/General`:
+
+```bash
+python Rasterizer2025.py
+```
 
 ## Controles
 
-### Primitivas de Dibujo
-- **1**: Cambiar a modo Puntos.
-- **2**: Cambiar a modo Líneas.
-- **3**: Cambiar a modo Triángulos (predeterminado).
+- Cambiar modelo activo: TAB, 1, 2, 3
+- Modo render: F alterna Puntos/Triángulos
+- Culling trasero: F4
+- Iluminación: L
+- Shaders básicos: I (Flat), O (Gouraud), P (Fragment), T (Texturizado si hay)
+- Shaders numerados por modelo: Shift+1..4 (toon, rim, lava, wireframe)
+- Tomas de cámara: Z (media), X (baja), C (alta), V (holandés)
+- Mover modelo: Flechas (XY)
+- Rotar: D/A (Z), Q/E (Y), Z/C (X)
+- Escala: W/S
+- Captura de pantalla: F12 (guarda en `screenshots/`)
 
-### Vistas de Depuración
-- **4**: Vista de Modelo.
-- **5**: Vista de Cámara (View).
-- **6**: Vista de Proyección.
-- **7**: Vista de Viewport.
-- **8**: Vista Completa (renderizado normal).
+## Asignación inicial de shaders por modelo
 
-### Tomas de Cámara Predefinidas
-- **Z**: Toma Media.
-- **X**: Ángulo Bajo.
-- **C**: Ángulo Alto.
-- **V**: Ángulo Dutch.
+En `Rasterizer2025.py` puedes definir:
 
-### Shaders y Renderizado
-- **I**: Aplicar Shader Plano (Flat).
-- **O**: Aplicar Shader Gouraud.
-- **P**: Aplicar Shader de Fragmentos (con texturas si están disponibles).
-- **L**: Activar o desactivar la iluminación.
-- **T**: Activar o desactivar las texturas (si el modelo tiene).
-- **H**: Mostrar esta lista de controles en una ventana.
+```python
+initial_shader_by_model = {
+    "horse": 1,
+    "misspiggy": 2,
+    "piggy": 4,
+    "practical": 3,
+}
 
-### Shaders Especiales
-- **B**: Activar/Desactivar Shader de Descomposición Oxidada - Crea efectos extremos de oxidación, hoyos masivos, erosión catastrófica y destrucción estructural del modelo.
-- **G**: Activar/Desactivar Shader Holográfico - Efectos futuristas con líneas de escaneo, fallas digitales y transparencia holográfica.
-- **N**: Activar Shader de Visión Térmica - Simula visión térmica con paleta de colores de temperatura y ondas de calor.
-- **J**: Activar Shader Tron/Wireframe - Efectos futuristas con wireframe neón, grid digital y corriente eléctrica animada.
-- **M**: Desactivar todos los shaders especiales y volver al renderizado normal.
+initial_shader_params_by_model = {
+    # "horse": {"levels": 5, "edge_width": 0.05},
+}
+```
 
-### Movimiento de la Cámara
-- **Flecha Derecha**: Mover la cámara hacia la derecha.
-- **Flecha Izquierda**: Mover la cámara hacia la izquierda.
-- **Flecha Arriba**: Mover la cámara hacia arriba.
-- **Flecha Abajo**: Mover la cámara hacia abajo.
+Los parámetros se inyectan al shader durante el render de ese modelo.
 
-### Manipulación del Modelo
-- **D / A**: Rotar el modelo sobre su eje Z.
-- **Q / E**: Rotar el modelo sobre su eje Y.
-- **W / S**: Aumentar o disminuir la escala del modelo.
+## Notas
 
-## Estructura del Proyecto
+- Los materiales MTL con `map_Kd` tienen prioridad sobre texturas de respaldo.
+- El fondo BMP se escala a ventana y no afecta el Z-buffer (se limpia a infinito).
+- El Z-buffer usa z menor como más cercano.
+
+## Estructura
 
 ```
 Rasterizer/
-├── General/
-│   ├── Rasterizer2025.py     # Aplicación principal
-│   ├── gl.py                 # Motor de renderizado
-│   ├── shaders.py            # Shaders de vértice y fragmento
-│   ├── model.py              # Clase para manejo de modelos 3D
-│   ├── texture.py            # Sistema de texturas
-│   ├── MathLib.py            # Operaciones matemáticas 3D
-│   ├── BMP_Writer.py         # Exportación de imágenes BMP
-│   ├── show_controls.py      # Ventana de ayuda
-│   ├── models/               # Modelos 3D (.obj)
-│   └── textures/             # Texturas (.bmp)
-└── FillPolygon/             # Implementación básica de rasterización
+  General/
+    Rasterizer2025.py   # Aplicación
+    gl.py               # Motor rasterizador + fondo y Z-buffer
+    shaders.py          # Shaders (incluye los numerados 1..4)
+    model.py            # Modelos y datos
+    texture.py          # Lector BMP robusto
+    MathLib.py          # Utilidades de matrices
+    BMP_Writer.py       # Export BMP (opcional)
+    models/             # OBJ/MTL y recursos
+    textures/           # BMP de respaldo y fondo
+    screenshots/        # Capturas (F12)
 ```
-
-## Shaders Implementados
-
-### Shaders Básicos
-- **Flat Shader**: Iluminación uniforme por triángulo
-- **Gouraud Shader**: Interpolación suave de normales
-- **Fragment Shader**: Shader básico de fragmento
-- **Textured Shader**: Renderizado con texturas
-
-### Shaders Especiales
-- **Rust Shader**: Simula oxidación extrema con:
-  - Creación de hoyos masivos que perforan el modelo
-  - Erosión superficial catastrófica
-  - Astillamiento y desmoronamiento agresivo
-  - Redes de grietas que dividen la geometría
-  - Falla estructural con colapso progresivo
-  - Efectos de tiempo que aumentan la destrucción
-
-- **Hologram Shader**: Efectos holográficos futuristas con:
-  - Líneas de escaneo animadas
-  - Distorsión y fallas digitales
-  - Transparencia dinámica
-  - Ruido digital y corrupción de color
-  - Efectos de parpadeo y pulsación
-
-- **Thermal Vision Shader**: Simula visión térmica con:
-  - Paleta de colores basada en temperatura (azul frío a rojo caliente)
-  - Ondas de calor que distorsionan la geometría
-  - Efectos de pulso térmico animado
-  - Líneas de interferencia de escaneo térmico
-  - Cálculo de temperatura basado en altura y ruido
-
-- **Tron/Wireframe Shader**: Efectos futuristas digitales con:
-  - Wireframe neón brillante en bordes
-  - Grid digital animado en la superficie
-  - Corriente eléctrica animada en las líneas
-  - Ondas digitales y pulsos de escala
-  - Efectos de escaneo vertical dinámico
-  - Base oscura con acentos cian neón
-
-## Características Técnicas
-
-- **Pipeline 3D completo**: Transformaciones de modelo, vista, proyección y viewport
-- **Iluminación**: Sistema de iluminación direccional con normales interpoladas
-- **Texturas**: Soporte para mapeo de texturas con coordenadas UV
-- **Animación**: Shaders animados basados en tiempo
-- **Exportación**: Generación automática de archivos BMP al cerrar
-
-## Modelos Incluidos
-
-- `sword.obj` - Modelo principal de espada con textura
-- `face.obj` - Modelo de cara
-- `Container.obj` - Contenedor
-- `baby.obj` - Modelo de bebé
-- `model.obj` - Modelo genérico
