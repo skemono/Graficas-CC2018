@@ -44,6 +44,16 @@ python Rasterizer2025.py
 - Escala: W/S
 - Captura de pantalla: F12 (guarda en `screenshots/`)
 
+## Capturas
+
+Vista rápida de algunos shaders y modelos renderizados (las imágenes están en `Rasterizer/General/screenshots/`):
+
+<p>
+  <img src="Rasterizer/General/screenshots/shot_20250820_215821.png" alt="Captura 1" width="45%"/>
+  <img src="Rasterizer/General/screenshots/shot_20250820_220028.png" alt="Captura 2" width="45%"/>
+  
+</p>
+
 ## Asignación inicial de shaders por modelo
 
 En `Rasterizer2025.py` puedes definir:
